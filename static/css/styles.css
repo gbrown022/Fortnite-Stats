@@ -1,0 +1,32 @@
+@font-face {
+    font-family: 'fortnite';
+    src: 
+        url('fonts/BurbankBigCondensed/BurbankBigCondensed-Bold.otf');
+        format('opentype');
+}
+
+#landing {
+        background-image: url( https://source.unsplash.com/random/800x600);
+}
+
+#search-button {
+    display: block;
+}
+
+body {
+    background: rgb(48, 15, 15);
+    color: rgb(245, 245, 245);
+    font-family: 'fortnite';
+}
+
+h1, h3 {
+    font-family: 'fortnite', sans-serif;
+}
+
+p {
+    font-size: 1.5rem;
+}
+
+.yellow {
+    color: #ff1;
+}

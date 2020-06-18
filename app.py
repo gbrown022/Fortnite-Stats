@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, request, render_template
 import requests
 import configparser
 
@@ -16,21 +16,39 @@ headers={ key_name: key_data }
 app = Flask(__name__)
 
 plat = 'psn'
-epic_nick = 'HomeBredPine999'
+
+def getLifetimeStats(data):
+    lifeTimeStats = {}
+    for d in data['lifeTimeStats']:
+        lifeTimeStats[d['key']] = d['value']
+    return lifeTimeStats
 
 def getPlayerStats(platform, epicNick):
     # GET https://api.fortnitetracker.com/v1/profile/{platform}/{epic-nickname} 
     endpoint = "https://api.fortnitetracker.com/v1/profile" + "/" + platform + "/" + epicNick
-    #res = requests.request("GET", endpoint, headers=headers)
     res = requests.get( endpoint, headers = headers )
-    return res.json
+    return res.json()
 
-@app.route('/', methods=['GET'])
+@app.route('/', methods=['GET', 'POST'])
 def home():
-    data = getPlayerStats(plat, epic_nick)
-    print(data.get('lifeTimeStats', 'Not Found!'))
-    return render_template('test.html', data=data, epic_nick=epic_nick, platform=plat)
+    return render_template('landing.html')
 
+@app.route('/stats/', methods=['GET', 'POST'])
+def lifeTimeStats():
+    # need a check to see that playername exists on the Fortnite stats server
+    # and conditionally display the correct response: found (and stats)
+    if request.method == 'POST':
+        try:
+            name = request.form['user-name']
+        except:
+            return(404)
+
+    print('name = ', name)
+    stats = getPlayerStats(plat, name)
+    if stats['error'] == 'Player Not Found':
+        return('<h1>Player not found in Epic\'s database.</h1>')
+    print(stats)
+    return render_template('stats.html', epic_nick=name, platform=plat, data=stats)
 
 # @app.route('/match-history', methods=['GET'])
 # def match():
@@ -39,5 +57,5 @@ def home():
 #     return render_template(response)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
     pass
