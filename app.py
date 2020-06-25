@@ -1,10 +1,10 @@
 from flask import Flask, request, render_template
 import requests
 import configparser
-import json
 
+# Running this requires an API key and a file 
+# containing the API key as follows: settings.ini
 def get_config_data():
-    # later add parameter for file path, and possibly, sections
     config = configparser.ConfigParser()
     config.read ('settings.ini')
     return config
@@ -16,6 +16,7 @@ key_data = api_config['API-Key'][key_name]
 headers={ key_name: key_data }
 app = Flask(__name__)
 
+# default route
 @app.route('/', methods=['GET', 'POST'])
 def index():
     return render_template('index.html')
@@ -42,13 +43,11 @@ def getPlayerStats(platform, epicNick):
         print ("Timeout Error:",errt)
     except requests.exceptions.RequestException as err:
         print ("OOps: Something Else",err)
-
+    # return the collected data 
     return r.json()
 
 @app.route('/stats/', methods=['GET', 'POST'])
 def lifeTimeStats():
-    # need a check to see that playername exists on the Fortnite stats server
-    # and conditionally display the correct response: found (and stats)
     if request.method == 'POST':
         try:
             name = request.form['user-name']
@@ -59,8 +58,11 @@ def lifeTimeStats():
         except:
             return(404)
 
+    # collected fields from user, now go get the stats!
     stats = getPlayerStats(plat, name)
 
+    # check for player not found, returned as a dict
+    # {'error' : 'Player Not Found'}
     err = stats.get('error') 
     if err:
         print(stats['error'])
@@ -70,15 +72,15 @@ def lifeTimeStats():
     # normal flow. present the stats page        
     return render_template('stats.html', epic_nick=name, platform=plat, data=stats)
 
+# For page request that is not found
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html')
 
-# @app.route('/match-history', methods=['GET'])
-# def match():
-#     response=requests.request("GET", url, headers=headers)
-#     print(response.status_code)
-#     return render_template(response)
+# Future ideas: have selectedable player stats: Solos
+# Duos, Squads, Lifetime
+# Have the shop details presented
+# More?
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
