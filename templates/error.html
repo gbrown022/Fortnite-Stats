@@ -1,0 +1,12 @@
+<!-- Child Template -->
+{% extends "base.html" %}
+
+{% block title %} Player Not Found {% endblock %}
+
+{% block content %}
+
+    <h1>Oops, NOT FOUND!!!</h1>
+        <p><span class="yellow"> {{ player }} </span> on <span class="yellow"> {{platform }} </span></h1>
+            was not found in Epic's database. :(<p>
+
+{% endblock %}
