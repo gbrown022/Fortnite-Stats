@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template
 import requests
 import configparser
+import json
 
 def get_config_data():
     # later add parameter for file path, and possibly, sections
@@ -15,7 +16,9 @@ key_data = api_config['API-Key'][key_name]
 headers={ key_name: key_data }
 app = Flask(__name__)
 
-plat = 'psn'
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    return render_template('index.html')
 
 def getLifetimeStats(data):
     lifeTimeStats = {}
@@ -24,14 +27,23 @@ def getLifetimeStats(data):
     return lifeTimeStats
 
 def getPlayerStats(platform, epicNick):
-    # GET https://api.fortnitetracker.com/v1/profile/{platform}/{epic-nickname} 
+    # GET https://api.fortnitetracker.com/v2/profile/{platform}/{epic-nickname} 
     endpoint = "https://api.fortnitetracker.com/v1/profile" + "/" + platform + "/" + epicNick
-    res = requests.get( endpoint, headers = headers )
-    return res.json()
 
-@app.route('/', methods=['GET', 'POST'])
-def home():
-    return render_template('landing.html')
+    # make a request and handle most common HTTP errors
+    try:
+        r = requests.get( endpoint, headers = headers )
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as errh:
+        print ("Http Error:",errh)
+    except requests.exceptions.ConnectionError as errc:
+        print ("Error Connecting:",errc)
+    except requests.exceptions.Timeout as errt:
+        print ("Timeout Error:",errt)
+    except requests.exceptions.RequestException as err:
+        print ("OOps: Something Else",err)
+
+    return r.json()
 
 @app.route('/stats/', methods=['GET', 'POST'])
 def lifeTimeStats():
@@ -42,13 +54,25 @@ def lifeTimeStats():
             name = request.form['user-name']
         except:
             return(404)
+        try:
+            plat = request.form['plat']
+        except:
+            return(404)
 
-    print('name = ', name)
     stats = getPlayerStats(plat, name)
-    if stats['error'] == 'Player Not Found':
-        return('<h1>Player not found in Epic\'s database.</h1>')
-    print(stats)
+
+    err = stats.get('error') 
+    if err:
+        print(stats['error'])
+        if stats['error'] == 'Player Not Found':
+            return render_template('error.html', player=name, platform=plat )
+
+    # normal flow. present the stats page        
     return render_template('stats.html', epic_nick=name, platform=plat, data=stats)
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html')
 
 # @app.route('/match-history', methods=['GET'])
 # def match():
